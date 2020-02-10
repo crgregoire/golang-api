@@ -1,0 +1,41 @@
+version: 0.2
+
+env:
+  variables:
+    GO111MODULE: "on"
+  parameter-store:
+    API_TOKEN: /CodeBuild/API_TOKEN
+
+phases:
+  install: 
+    runtime-versions:
+      golang: 1.12
+
+    commands:
+      - git config --global --add url."https://$API_TOKEN:@github.com/".insteadOf "https://github.com/"
+      - go get
+
+  pre_build: 
+    commands:
+
+      #
+      # Format the code correctly
+      #
+      - go fmt
+
+      #
+      # Run all tests included with our application
+      #
+      - go test
+
+  build:
+    commands:
+
+      #
+      # Build our application
+      #
+      - go build -o application application.go
+
+artifacts:
+  files:
+    - application

@@ -1,0 +1,42 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.12
+        environment:
+          GO111MODULE: "on"
+      - image: tkuchiki/delayed-mysql
+        environment:
+          MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_PASSWORD: ''
+          MYSQL_DATABASE: tespo_docker
+          
+    working_directory: /go/src/github.com/tespo/buddha
+    steps:
+      - checkout
+
+      # Wait for mysql to be running
+      - run:
+          name: Wait for db
+          command: dockerize -wait tcp://localhost:3306 -timeout 1m
+      
+      - run:
+          name: clone satya
+          command: git clone git@github.com:tespo/satya.git
+
+      - run:
+          name: build database
+          command: cd satya && go build && ./satya -type=build
+          
+      # Get dependencies
+      - run:
+          name: Get dependencies
+          command: go get -v -t -d ./...
+
+      # Run Tests
+      - run:
+          name: Run tests
+          command: go test -v ./...
